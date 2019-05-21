@@ -118,5 +118,5 @@ for fullFileName in fileList:
 			fs.rename(inputTodoPath + fileName, errorPath + fileName)
 			# write error
 			path = hdfsStart + hdfsHost + ':' + hdfsPort + errorPath + errorFile
-			with fs.open(path, 'w+') as f:
+			with fs.open(path, 'ab') as f:
 				f.write('Error in file ' + fullFileName)
