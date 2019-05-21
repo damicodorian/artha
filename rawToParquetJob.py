@@ -21,7 +21,7 @@ nbSensors = 22
 hdfsStart = 'hdfs://'
 hdfsHost = 'artha.node1.pro.hupi.loc'
 hdfsPort = '8020'
-hdfsUser = 'ddamico'
+hdfsUser = 'artha'
 
 # path of the file we want to read
 inputTodoPath = '/user/' + hdfsUser + '/RAW_FILES/TO_DO/'
