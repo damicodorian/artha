@@ -117,6 +117,7 @@ for fullFileName in fileList:
 			# write error
 			path = hdfsStart + hdfsHost + ':' + hdfsPort + errorPath + errorFile
 			with fs.open(path, 'ab') as f:
-				f.write('Error in file ' + str(fullFileName))
+				errorString = 'Error in file ' + str(fullFileName) + '\n'
+				f.write(errorString.encode('utf-8'))
 			# use rename function to move the file
 			fs.rename(inputTodoPath + fileName, errorPath + fileName)
