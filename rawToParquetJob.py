@@ -30,6 +30,11 @@ inputDonePath = '/user/' + hdfsUser + '/RAW_FILES/DONE/'
 # path of the file we write
 outputPath = '/user/' + hdfsUser + '/DECIMAL_MICROAMPERE_DATA/UNFILTERED/TO_DO/'
 
+# error path
+errorPath = '/user/' + hdfsUser + '/RAW_FILES/ERROR/'
+# error file
+errorFile = 'error.txt'
+
 # get the file system
 fs = pa.hdfs.connect(hdfsHost, int(hdfsPort), user = hdfsUser)
 
@@ -44,67 +49,74 @@ for fullFileName in fileList:
 	# get file path
 	path = hdfsStart + hdfsHost + ':' + hdfsPort + inputTodoPath + fileName
 	with fs.open(path, 'rb') as f:
-		# get the content in the zip
-		archive = zipfile.ZipFile(f, 'r')
-		# get the first file ine the list of files in the zip
-		rawFileName = archive.namelist()[0]
-		# get the data in the raw file
-		binaryContent = archive.read(rawFileName)
+		try:
+			# get the content in the zip
+			archive = zipfile.ZipFile(f, 'r')
+			# get the first file ine the list of files in the zip
+			rawFileName = archive.namelist()[0]
+			# get the data in the raw file
+			binaryContent = archive.read(rawFileName)
+				
+			# convert the data
+			shortArray = unpack('<' + str(len(binaryContent)//2) + 'h', binaryContent)
 			
-		# convert the data
-		shortArray = unpack('<' + str(len(binaryContent)//2) + 'h', binaryContent)
-		
-		# create the array of data for each sensor
-		# length of the data
-		shortArraySize = len(shortArray)
-		# Array of array representing each sensor
-		sensors = [[] for i in range(nbSensors)]
-		# index of the first 22
-		value22Id = shortArray.index(nbSensors)
-		while(value22Id < shortArraySize):
-			# number of values in a row for each sensor
-			nbValues = shortArray[value22Id + 2]
-			# first value of sensors
-			valuesStartId = value22Id + 4
-			# loop to get all values for each sensor
-			for i in range(0, nbSensors):
-				valuesEndId = valuesStartId + nbValues
-				sensors[i].extend(shortArray[valuesStartId : valuesEndId])
-				valuesStartId = valuesEndId
-			value22Id = valuesStartId
+			# create the array of data for each sensor
+			# length of the data
+			shortArraySize = len(shortArray)
+			# Array of array representing each sensor
+			sensors = [[] for i in range(nbSensors)]
+			# index of the first 22
+			value22Id = shortArray.index(nbSensors)
+			while(value22Id < shortArraySize):
+				# number of values in a row for each sensor
+				nbValues = shortArray[value22Id + 2]
+				# first value of sensors
+				valuesStartId = value22Id + 4
+				# loop to get all values for each sensor
+				for i in range(0, nbSensors):
+					valuesEndId = valuesStartId + nbValues
+					sensors[i].extend(shortArray[valuesStartId : valuesEndId])
+					valuesStartId = valuesEndId
+				value22Id = valuesStartId
 
-		# get file extension
-		inputFileExtension = '.' + rawFileName.split('.')[-1]
-		# get the date from the file name
-		year = rawFileName[0:4]
-		month = rawFileName[4:6]
-		day = rawFileName[6:8]
-		hours = rawFileName[9:11]
-		minutes = rawFileName[11:13]
-		seconds = rawFileName[13:15]
-		milliseconds = '000000'
-		# Concatenate the date with the good format
-		dateString = day + '.' + month + '.' + year + ' ' + hours + ':' + minutes + ':' + seconds + ',' + milliseconds
-		# Convert the string to date
-		dateDate = dttime.strptime(dateString, '%d.%m.%Y %H:%M:%S,%f')
-		
-		# Array of time stamps
-		timeStamps = []
-		for i in range(0, len(sensors[0])):
-			timeStamp = dateDate.strftime('%s.%f')
-			timeStamps.append(timeStamp)
-			dateDate = dateDate + datetime.timedelta(microseconds=100)
+			# get file extension
+			inputFileExtension = '.' + rawFileName.split('.')[-1]
+			# get the date from the file name
+			year = rawFileName[0:4]
+			month = rawFileName[4:6]
+			day = rawFileName[6:8]
+			hours = rawFileName[9:11]
+			minutes = rawFileName[11:13]
+			seconds = rawFileName[13:15]
+			milliseconds = '000000'
+			# Concatenate the date with the good format
+			dateString = day + '.' + month + '.' + year + ' ' + hours + ':' + minutes + ':' + seconds + ',' + milliseconds
+			# Convert the string to date
+			dateDate = dttime.strptime(dateString, '%d.%m.%Y %H:%M:%S,%f')
+			
+			# Array of time stamps
+			timeStamps = []
+			for i in range(0, len(sensors[0])):
+				timeStamp = dateDate.strftime('%s.%f')
+				timeStamps.append(timeStamp)
+				dateDate = dateDate + datetime.timedelta(microseconds=100)
 
-		# Convert sensors data to DF
-		df = pd.DataFrame({0: sensors[0], 1: sensors[1], 2: sensors[2], 3: sensors[3], 4: sensors[4], 5: sensors[5], 6: sensors[6], 7: sensors[7], 8: sensors[8], 9: sensors[9], 10: sensors[10], 11: sensors[11], 12: sensors[12], 13: sensors[13], 14: sensors[14], 15: sensors[15], 16: sensors[16], 17: sensors[17], 18: sensors[18], 19: sensors[19], 20: sensors[20], 21: sensors[21]}, index=timeStamps)
-		
-		table = pa.Table.from_pandas(df)
-		
-		outputDirectory = rawFileName.replace(inputFileExtension, '')
-		pq.write_to_dataset(table, root_path = hdfsStart + hdfsHost + ':' + hdfsPort + outputPath + outputDirectory, filesystem = fs)
-		
-		# use rename function to move the file
-		fs.rename(inputTodoPath + fileName, inputDonePath + fileName)
-		timeEnd = time.time()
-		
-		print('file done : ' + fileName)
+			# Convert sensors data to DF
+			df = pd.DataFrame({0: sensors[0], 1: sensors[1], 2: sensors[2], 3: sensors[3], 4: sensors[4], 5: sensors[5], 6: sensors[6], 7: sensors[7], 8: sensors[8], 9: sensors[9], 10: sensors[10], 11: sensors[11], 12: sensors[12], 13: sensors[13], 14: sensors[14], 15: sensors[15], 16: sensors[16], 17: sensors[17], 18: sensors[18], 19: sensors[19], 20: sensors[20], 21: sensors[21]}, index=timeStamps)
+			
+			table = pa.Table.from_pandas(df)
+			
+			outputDirectory = rawFileName.replace(inputFileExtension, '')
+			pq.write_to_dataset(table, root_path = hdfsStart + hdfsHost + ':' + hdfsPort + outputPath + outputDirectory, filesystem = fs)
+			
+			# use rename function to move the file
+			fs.rename(inputTodoPath + fileName, inputDonePath + fileName)
+			
+			print('file done : ' + fileName)
+		except:
+			# use rename function to move the file
+			fs.rename(inputTodoPath + fileName, errorPath + fileName)
+			# write error
+			path = hdfsStart + hdfsHost + ':' + hdfsPort + errorPath + errorFile
+			with fs.open(path, 'w+') as f:
+				f.write('Error in file ' + fullFileName)
