@@ -114,9 +114,9 @@ for fullFileName in fileList:
 			
 			print('file done : ' + fileName)
 		except:
-			# use rename function to move the file
-			fs.rename(inputTodoPath + fileName, errorPath + fileName)
 			# write error
 			path = hdfsStart + hdfsHost + ':' + hdfsPort + errorPath + errorFile
 			with fs.open(path, 'ab') as f:
-				f.write('Error in file ' + fullFileName)
+				f.write('Error in file ' + str(fullFileName))
+			# use rename function to move the file
+			fs.rename(inputTodoPath + fileName, errorPath + fileName)
