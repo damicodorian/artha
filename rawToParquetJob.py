@@ -39,7 +39,7 @@ fileList = fs.ls(hdfsStart + hdfsHost + ':' + hdfsPort + inputTodoPath)
 # loop on each file of the list
 for fullFileName in fileList:
 	# get the name of the file
-    fileName = fullFileName.split('/')[-1]
+	fileName = fullFileName.split('/')[-1]
 	print('file start : ' + fileName)
 	# get file path
 	path = hdfsStart + hdfsHost + ':' + hdfsPort + inputTodoPath + fileName
