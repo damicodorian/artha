@@ -45,7 +45,6 @@ fileList = fs.ls(hdfsStart + hdfsHost + ':' + hdfsPort + inputTodoPath)
 for fullFileName in fileList:
 	# get the name of the file
 	fileName = fullFileName.split('/')[-1]
-	print('file start : ' + fileName)
 	# get file path
 	path = hdfsStart + hdfsHost + ':' + hdfsPort + inputTodoPath + fileName
 	with fs.open(path, 'rb') as f:
@@ -110,9 +109,7 @@ for fullFileName in fileList:
 			pq.write_to_dataset(table, root_path = hdfsStart + hdfsHost + ':' + hdfsPort + outputPath + outputDirectory, filesystem = fs)
 			
 			# use rename function to move the file
-			fs.rename(inputTodoPath + fileName, inputDonePath + fileName)
-			
-			print('file done : ' + fileName)
+			fs.rename(inputTodoPath + fileName, inputDonePath + fileName)			
 		except:
 			# write error
 			path = hdfsStart + hdfsHost + ':' + hdfsPort + errorPath + errorFile
